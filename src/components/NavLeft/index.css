@@ -1,0 +1,15 @@
+.left-top{
+    padding-top: 10px;
+    background-color: #002140;
+}
+.left-top>img{
+  width: 55px;
+  height: 55px;
+  display: inline-block;
+  vertical-align: middle
+}
+.left-top>h2{
+  color: white;
+  display: inline-block;
+  vertical-align: middle;
+}
