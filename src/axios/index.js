@@ -19,7 +19,7 @@ export default class Axios {
                 url: options.url,
                 method: 'get',
                 baseURL: baseApi,
-                timeout: 5000,
+                timeout: 10000,
                 params: (options.data && options.data.params) || ''
             }).then((response) => {
                 if (response.status == '200') {
