@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Modal, Form, Select, Input, Tree, Transfer } from 'antd';
+import { Card, Button, Modal, Form, Select, Input, Tree, Transfer, Spin } from 'antd';
 import Utils from './../../utils/utils';
 import ETable from './../../components/ETable';
 import axios from './../../axios';
@@ -11,26 +11,29 @@ export default class Permission extends React.Component {
     constructor(props) {
         super(props)
     }
-    state = {}
+    state = { loading: false }
     componentWillMount() {
         this.requestList();
     }
     //请求列表数据
     requestList = () => {
+        this.setState({
+            loading: true
+        })
         axios.ajax({
             url: '/role/list',
             data: {
                 params: {}
             }
         }).then((res) => {
-            console.log(res);
             if (res.code == 0) {
                 let list = res.result.item_list.map((item, i) => {
                     item.key = i;
                     return item;
                 })
                 this.setState({
-                    list
+                    list,
+                    loading: false
                 })
             }
         })
@@ -122,6 +125,54 @@ export default class Permission extends React.Component {
             }
         })
     }
+    getAuthUserList = (dataSource) => {
+        const mockData = [];
+        const targetKeys = [];
+        if (dataSource && dataSource.length > 0) {
+            for (let i = 0; i < dataSource.length; i++) {
+                const data = {
+                    key: dataSource[i].user_id,
+                    title: dataSource[i].user_name,
+                    status: dataSource[i].status,
+                };
+                if (data.status == 1) {
+                    targetKeys.push(data.key);
+                }
+                mockData.push(data);
+            }
+        }
+        this.setState({ mockData, targetKeys });
+    };
+    patchUserInfo = (targetKeys) => {
+        this.setState({
+            targetKeys: targetKeys
+        });
+    };
+    // 用户授权提交
+    handleUserSubmit = () => {
+        let data = {};
+        data.user_ids = this.state.targetKeys || [];
+        data.role_id = this.state.selectedItem.id;
+        console.log('用户授权提交数据', data);
+        // axios.ajax({
+        //     url: '/role/user_role_edit',
+        //     data: {
+        //         params: {
+        //             ...data
+        //         }
+        //     }
+        // }).then((res) => {
+        //     if (res) {
+        //         this.setState({
+        //             isUserVisible: false
+        //         })
+        //         this.requestList();
+        //     }
+        // })
+    }
+    /****
+     * 渲染父页面
+     */
     render() {
         const columns = [{
             title: '角色ID',
@@ -149,78 +200,80 @@ export default class Permission extends React.Component {
         }];
         return (
             <div>
-                <Card>
-                    <Button type="primary"
-                        style={{ margin: '0 10px' }}
-                        onClick={this.handleRole}>创建角色</Button>
-                    <Button type="primary"
-                        style={{ margin: '0 10px' }}
-                        onClick={this.handlePermission}>设置权限</Button>
-                    <Button type="primary"
-                        style={{ margin: '0 10px' }}
-                        onClick={this.handleUserAuth}>用户授权</Button>
-                </Card>
-                <div className="content-wrap">
-                    <ETable
-                        updateSelectedItem={Utils.updateSelectedItem.bind(this)}
-                        selectedRowKeys={this.state.selectedRowKeys}
-                        dataSource={this.state.list}
-                        columns={columns}
-                    ></ETable>
-                </div>
-                <Modal
-                    title="创建角色"
-                    visible={this.state.isRoleVisible}
-                    onOk={this.handleRoleSubmit}
-                    onCancel={() => {
-                        this.roleForm.props.form.resetFields();
-                        this.setState({
-                            isRoleVisible: false
-                        })
-                    }}
-                >
-                    <RoleForm wrappedComponentRef={(inst) => this.roleForm = inst} />
-                </Modal>
-                <Modal
-                    title="权限设置"
-                    visible={this.state.isPermVisible}
-                    width={600}
-                    onOk={this.handlePermEditSubmit}
-                    onCancel={() => {
-                        this.setState({
-                            isPermVisible: false
-                        })
-                    }}>
-                    <PermEditForm
-                        wrappedComponentRef={(inst) => this.roleForm = inst}
-                        detailInfo={this.state.detailInfo}
-                        menuInfo={this.state.menuInfo || []}
-                        patchMenuInfo={(checkedKeys) => {
+                <Spin spinning={this.state.loading} size='large'>
+                    <Card>
+                        <Button type="primary"
+                            style={{ margin: '0 10px' }}
+                            onClick={this.handleRole}>创建角色</Button>
+                        <Button type="primary"
+                            style={{ margin: '0 10px' }}
+                            onClick={this.handlePermission}>设置权限</Button>
+                        <Button type="primary"
+                            style={{ margin: '0 10px' }}
+                            onClick={this.handleUserAuth}>用户授权</Button>
+                    </Card>
+                    <div className="content-wrap">
+                        <ETable
+                            updateSelectedItem={Utils.updateSelectedItem.bind(this)}
+                            selectedRowKeys={this.state.selectedRowKeys}
+                            dataSource={this.state.list}
+                            columns={columns}
+                        ></ETable>
+                    </div>
+                    <Modal
+                        title="创建角色"
+                        visible={this.state.isRoleVisible}
+                        onOk={this.handleRoleSubmit}
+                        onCancel={() => {
+                            this.roleForm.props.form.resetFields();
                             this.setState({
-                                menuInfo: checkedKeys
-                            });
+                                isRoleVisible: false
+                            })
                         }}
-                    />
-                </Modal>
-                <Modal
-                    title="用户授权"
-                    visible={this.state.isUserVisible}
-                    width={800}
-                    onOk={this.handleUserSubmit}
-                    onCancel={() => {
-                        this.setState({
-                            isUserVisible: false
-                        })
-                    }}>
-                    <RoleAuthForm
-                        wrappedComponentRef={(inst) => this.userAuthForm = inst}
-                        isClosed={this.state.isAuthClosed}
-                        detailInfo={this.state.detailInfo}
-                        targetKeys={this.state.targetKeys}
-                        mockData={this.state.mockData}
-                        patchUserInfo={this.patchUserInfo}
-                    />
-                </Modal>
+                    >
+                        <RoleForm wrappedComponentRef={(inst) => this.roleForm = inst} />
+                    </Modal>
+                    <Modal
+                        title="权限设置"
+                        visible={this.state.isPermVisible}
+                        width={600}
+                        onOk={this.handlePermEditSubmit}
+                        onCancel={() => {
+                            this.setState({
+                                isPermVisible: false
+                            })
+                        }}>
+                        <PermEditForm
+                            wrappedComponentRef={(inst) => this.roleForm = inst}
+                            detailInfo={this.state.detailInfo}
+                            menuInfo={this.state.menuInfo || []}
+                            patchMenuInfo={(checkedKeys) => {
+                                this.setState({
+                                    menuInfo: checkedKeys
+                                });
+                            }}
+                        />
+                    </Modal>
+                    <Modal
+                        title="用户授权"
+                        visible={this.state.isUserVisible}
+                        width={800}
+                        onOk={this.handleUserSubmit}
+                        onCancel={() => {
+                            this.setState({
+                                isUserVisible: false
+                            })
+                        }}>
+                        <RoleAuthForm
+                            wrappedComponentRef={(inst) => this.userAuthForm = inst}
+                            isClosed={this.state.isAuthClosed}
+                            detailInfo={this.state.detailInfo}
+                            targetKeys={this.state.targetKeys}
+                            mockData={this.state.mockData}
+                            patchUserInfo={this.patchUserInfo}
+                        />
+                    </Modal>
+                </Spin>
             </div>
         )
     }

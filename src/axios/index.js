@@ -1,6 +1,6 @@
-import JsonP from 'jsonp'
-import axios from 'axios'
-import { Modal } from 'antd'
+import JsonP from 'jsonp';
+import axios from 'axios';
+import { Modal } from 'antd';
 export default class Axios {
     static jsonp(options) {
         return new Promise((res, rej) => {
@@ -22,10 +22,15 @@ export default class Axios {
                 timeout: 10000,
                 params: (options.data && options.data.params) || ''
             }).then((response) => {
+                console.log(response);
                 if (response.status == '200') {
                     resolve(response.data);
                 } else {
                     reject(response.data);
+                    Modal.info({
+                        title: "提示",
+                        content: 'response.data.msg'
+                    })
                 }
             })
         });
