@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Button, Modal, Form, Select, Input, Tree, Transfer, Spin } from 'antd';
 import Utils from './../../utils/utils';
 import ETable from './../../components/ETable';
-import axios from './../../axios';
+import { getRoleList, getUserList } from './../../axios/services';
 import menuConfig from '../../menuConfig'
 const Option = Select.Option;
 const FormItem = Form.Item;
@@ -20,23 +20,17 @@ export default class Permission extends React.Component {
         this.setState({
             loading: true
         })
-        axios.ajax({
-            url: '/role/list',
-            data: {
-                params: {}
-            }
-        }).then((res) => {
-            if (res.code == 0) {
-                let list = res.result.item_list.map((item, i) => {
-                    item.key = i;
-                    return item;
-                })
-                this.setState({
-                    list,
-                    loading: false
-                })
-            }
-        })
+        getRoleList({ params: {} }).then((res) => {
+            let list = res.data.result.item_list.map((item, i) => {
+                item.key = i;
+                return item;
+            })
+            this.setState({
+                list,
+                loading: false
+            })
+            console.log(res, this.state.loading);
+        });
     }
     /****
      * 创建角色
@@ -112,17 +106,8 @@ export default class Permission extends React.Component {
         });
     }
     getRoleUserList = (id) => {
-        axios.ajax({
-            url: '/role/user_list',
-            data: {
-                params: {
-                    id: id
-                }
-            }
-        }).then((res) => {
-            if (res) {
-                this.getAuthUserList(res.result);
-            }
+        getUserList(id).then((res) => {
+            this.getAuthUserList(res.data.result);
         })
     }
     getAuthUserList = (dataSource) => {
